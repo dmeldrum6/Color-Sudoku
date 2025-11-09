@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Add proper UTF-8 meta tag -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- If you're using a content-type header in your HTML, make sure it includes charset -->
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Color Sudoku</title>
+<style>
+.game-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 10px;
+  font-family: system-ui, -apple-system, sans-serif;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.game-title {
+  text-align: center;
+  margin: 0 0 10px 0;
+  color: #1a1a1a;
+}
+
+.controls-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.control-section {
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.section-header {
+  font-size: 0.9em;
+  text-transform: uppercase;
+  color: #4b5563;
+  letter-spacing: 0.05em;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+  font-weight: 600;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.variant-btn, .difficulty-btn {
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95em;
+}
+
+.variant-btn:hover, .difficulty-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.variant-btn.active, .difficulty-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.stats {
+  text-align: center;
+  font-size: 0.9em;
+  color: #4b5563;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-btn {
+  padding: 10px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95em;
+}
+
+.action-btn:hover {
+  background: #2563eb;
+}
+
+.game-info {
+  color: #6b7280;
+  line-height: 1.6;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.95em;
+}
+
+.message {
+  text-align: center;
+  min-height: 24px;
+  color: #059669;
+}
+
+.gameplay-area {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.color-palette-container {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.palette-title {
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #4b5563;
+  font-size: 0.9em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.symbol-palette {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 5px;
+  padding: 10px;
+}
+
+.symbol-item {
+  aspect-ratio: 1;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: white;
+  font-size: 1.2em;
+  user-select: none;
+}
+
+.symbol-item:hover {
+  border-color: #3b82f6;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 1px;
+  background: #1a1a1a;
+  padding: 2px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.cell {
+  aspect-ratio: 1;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  cursor: pointer;
+  position: relative;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.cell:nth-child(3n) {
+  border-right: 2px solid #1a1a1a;
+}
+
+.cell:nth-child(n + 19):nth-child(-n + 27),
+.cell:nth-child(n + 46):nth-child(-n + 54) {
+  border-bottom: 2px solid #1a1a1a;
+}
+
+.cell:nth-child(n + 73) {
+  border-bottom: none;
+}
+
+.cell[data-fixed="true"] {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+</style>
+</head>
+<body>
+<div class="game-container">
+  <div class="controls">
+    <h1 class="game-title">Color Sudoku</h1>
+    <div class="game-info">
+        Drag symbols from the palette to fill the grid.
+    </div>
+      <div class="action-buttons">
+        <button class="action-btn">New Game</button>
+        <button class="action-btn">Check Solution</button>
+      </div>
+	<div class="stats">
+        <span class="stat-label">Cells to fill: </span>
+        <span id="cells-remaining">0</span>
+	</div>
+    <div class="controls-container">
+		<div class="control-section">
+			<div class="section-header">Game Mode</div>
+			<div class="button-group">
+				<button class="variant-btn active" data-variant="colors">Colors</button>
+				<button class="variant-btn" data-variant="numbers">Numbers</button>
+				<button class="variant-btn" data-variant="letters">Letters</button>
+				<button class="variant-btn" data-variant="emojis">Emojis</button>
+			</div>
+      </div>
+
+      <div class="control-section">
+        <div class="section-header">Difficulty</div>
+        <div class="button-group">
+          <button class="difficulty-btn active">Easy</button>
+          <button class="difficulty-btn">Medium</button>
+          <button class="difficulty-btn">Hard</button>
+        </div>
+      </div>
+
+
+
+
+
+
+      <div class="message"></div>
+    </div>
+  </div>
+
+  <div class="gameplay-area">
+    <div class="color-palette-container">
+      <div class="palette-title">SYMBOL PALETTE</div>
+      <div class="symbol-palette"></div>
+    </div>
+    
+    <div class="board"></div>
+  </div>
+</div>
+
+<script>
+const VARIANTS = {
+  colors: [
+    '#FF0000', '#00FF00', '#0000FF', '#FFFF00', 
+    '#FF00FF', '#00FFFF', '#FFA500', '#800080', '#008000'
+  ],
+  numbers: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+  letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'],
+  emojis: ['😊', '😎', '😍', '🤔', '😮', '🎵', '💫', '⭐', '🌟']
+};
+
+let currentVariant = 'colors';
+let currentDifficulty = 'easy';
+let gameBoard = Array(81).fill(null);
+let fixedCells = new Set();
+
+// Generate a valid Sudoku puzzle
+function generateSudoku(difficulty) {
+  // Clear the current board
+  gameBoard = Array(81).fill(null);
+  fixedCells.clear();
+  
+  // For demonstration, create a simple pattern with some fixed cells
+  const numCellsToFill = difficulty === 'easy' ? 35 : 
+                         difficulty === 'medium' ? 30 : 25;
+  
+  // Create a valid solution first (simplified for demo)
+  const solution = [];
+  for(let i = 0; i < 9; i++) {
+    for(let j = 0; j < 9; j++) {
+      const index = i * 9 + j;
+      solution[index] = ((i*3 + Math.floor(i/3) + j) % 9);
+    }
+  }
+  
+  // Randomly select cells to keep as fixed
+  const indices = Array.from({length: 81}, (_, i) => i);
+  for(let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  
+  // Fill in the selected fixed cells
+  for(let i = 0; i < numCellsToFill; i++) {
+    const index = indices[i];
+    gameBoard[index] = solution[index];
+    fixedCells.add(index);
+  }
+  
+  updateBoard();
+  updateCellsRemaining();
+}
+
+function updatePalette() {
+  const palette = document.querySelector('.symbol-palette');
+  palette.innerHTML = '';
+  
+  VARIANTS[currentVariant].forEach((symbol, index) => {
+    const item = document.createElement('div');
+    item.className = 'symbol-item';
+    
+    if (currentVariant === 'colors') {
+      item.style.backgroundColor = symbol;
+    } else {
+      item.textContent = symbol;
+    }
+    
+    item.draggable = true;
+    item.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', index.toString());
+    });
+    
+    palette.appendChild(item);
+  });
+}
+
+function updateBoard() {
+  const board = document.querySelector('.board');
+  board.innerHTML = '';
+  
+  for (let i = 0; i < 81; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    
+    if (fixedCells.has(i)) {
+      cell.setAttribute('data-fixed', 'true');
+      if (gameBoard[i] !== null) {
+        if (currentVariant === 'colors') {
+          cell.style.backgroundColor = VARIANTS[currentVariant][gameBoard[i]];
+        } else {
+          cell.textContent = VARIANTS[currentVariant][gameBoard[i]];
+        }
+      }
+    } else {
+      // Make cells droppable
+      cell.addEventListener('dragover', (e) => e.preventDefault());
+      cell.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const symbolIndex = parseInt(e.dataTransfer.getData('text/plain'));
+        const symbol = VARIANTS[currentVariant][symbolIndex];
+        
+        if (currentVariant === 'colors') {
+          cell.style.backgroundColor = symbol;
+        } else {
+          cell.style.backgroundColor = 'white';
+          cell.textContent = symbol;
+        }
+        
+        gameBoard[i] = symbolIndex;
+        updateCellsRemaining();
+      });
+    }
+    
+    board.appendChild(cell);
+  }
+}
+
+function updateCellsRemaining() {
+  const emptyCells = gameBoard.filter(cell => cell === null).length;
+  document.getElementById('cells-remaining').textContent = emptyCells;
+}
+
+// Wait for DOM to be fully loaded before initializing the game
+document.addEventListener('DOMContentLoaded', () => {
+  // Handle variant switching
+  document.querySelectorAll('.variant-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('.variant-btn.active').classList.remove('active');
+      btn.classList.add('active');
+      currentVariant = btn.dataset.variant;
+      
+      updatePalette();
+      updateBoard();
+      
+      document.querySelector('.palette-title').textContent = 
+        currentVariant.charAt(0).toUpperCase() + currentVariant.slice(1) + ' Palette';
+    });
+  });
+
+  // Handle difficulty selection
+  document.querySelectorAll('.difficulty-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelector('.difficulty-btn.active').classList.remove('active');
+      btn.classList.add('active');
+      currentDifficulty = btn.textContent.toLowerCase();
+      generateSudoku(currentDifficulty);
+    });
+  });
+
+  // Handle New Game button
+  document.querySelectorAll('.action-btn').forEach(btn => {
+    if (btn.textContent === 'New Game') {
+      btn.addEventListener('click', () => {
+        generateSudoku(currentDifficulty);
+      });
+    }
+  });
+
+  // Initialize the game
+  generateSudoku('easy');
+  updatePalette();
+});
+</script>
+</body>
+</html>
